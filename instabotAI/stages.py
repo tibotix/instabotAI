@@ -121,7 +121,7 @@ class LikeFollowNewAccountsStage(Stage):
     self._initialize_bot()
 
   def _initialize_bot(self):
-    self.bot = Bot(self.client, delay_between_action=action_delayer.delay_in_seconds, delay_variance=action_delayer.delay_tolerance)
+    self.bot = Bot.from_client(self.client, delay_between_action=action_delayer.delay_in_seconds, delay_variance=action_delayer.delay_tolerance)
 
   def _start(self):
     set_bot_input_task = self.input_db.task_creator.new_task_by_count(self.accounts_to_process)

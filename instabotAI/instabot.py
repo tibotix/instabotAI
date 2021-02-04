@@ -5,6 +5,7 @@ from instauto.api.client import ApiClient
 from instauto.api.exceptions import StateExpired
 
 from instabotAI import stages
+import termcolor
 
 
 
@@ -22,13 +23,14 @@ class InstaBotAI():
     action_delayer.delay_tolerance = delay_tolerance #TODO: maybe better solution
 
   def _check_client_state(self):
-    if(not self.client.state.valid):
+    if(not hasattr(self.client, "state") or not self.client.state.valid):
       raise StateExpired("Client is not valid anymore. Please relogin!")
 
   def add_stage(self, stage: stages.Stage):
     self.stages.append(stage)
 
   def start(self):
+    print(termcolor.colored("[+] Starting instabotAI", "green"))
     for stage in self.stages:
       stage.set_client(self.client)
       stage.start()
