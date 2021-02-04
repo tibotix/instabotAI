@@ -260,7 +260,7 @@ if(__name__ == "__main__"):
 #  print(str(loggers))
 
   logger = logging.getLogger("instauto")
-  logger.setLevel(logging.CRITICAL+1)
+  logger.setLevel(logging.NOTSET)
 
   colorama.init()
   print(termcolor.colored(logo, "cyan"))
@@ -271,4 +271,3 @@ if(__name__ == "__main__"):
     main(args)
   except Exception as e:
     print(termcolor.colored("[-] {0}".format(str(e)), "red"))
-

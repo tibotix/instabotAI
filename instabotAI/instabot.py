@@ -15,7 +15,7 @@ class InstaBotAI():
     self._set_delay_time(delay_between_actions, delay_tolerance)
     self.client = client
     self._check_client_state()
-    self.client.own_acc = Account.from_user_id(self.client, self.client.state.user_id, friendships_search_count=friendships_search_count)
+    self.friendships_search_count = friendships_search_count
     self.stages = list()
 
   def _set_delay_time(self, delay_between_actions: float, delay_tolerance: float):
@@ -31,6 +31,13 @@ class InstaBotAI():
 
   def start(self):
     print(termcolor.colored("[+] Starting instabotAI", "green"))
+    if(not self.stages):
+      print(termcolor.colored("[!] No stages to process. Exiting...", "magenta"))
+      return
+    self._start()
+
+  def _start(self):
+    self.client.own_acc = Account.from_user_id(self.client, self.client.state.user_id, friendships_search_count=self.friendships_search_count)
     for stage in self.stages:
       stage.set_client(self.client)
       stage.start()
