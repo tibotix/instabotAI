@@ -1,4 +1,5 @@
 import os
+import typing
 from instabotAI.accounts_database import AccountsDatabaseLimitCalculator
 from instabotAI import account_filterer, file_adapter
 from instabotAI.instabot import InstaBotAI
@@ -12,6 +13,7 @@ import pathlib
 import colorama
 import termcolor
 import sys
+import shutil
 
 import logging
 
@@ -40,19 +42,19 @@ It uses 5 different stages to get you the most followers on Instagram.
 Stage 1: Find Same Accounts
 ---------------------------
 This stage tries to find accounts that does the same as you do.
-So their audience fits the best in your also.
+So their audience fits the best in your too.
 instabotAI currently supports 2 ways to find those accounts:
 1. Given hashtags.
 2. Given usernames
-You can provide both inputs as files.
+You can provide both input categories as files with inputs separeted with newlines.
 
 Stage 2: Categorize Accounts
 ----------------------------
 This stage analyzes your own following / followers insight
 and categorize accounts in 2 states:
 1. Mutual Friendships: Meaning that you follow each other
-2. Not interested Friendship: Meaning that you follow acc, but acc does not follow you
-The categorized accounts are finally saved in our Database
+2. Not interested Friendship: Meaning that you follow acc, but acc does not follow you back
+The categorized accounts are finally saved in our Databases respectively.
 
 Stage 3: Unfollow Accounts
 --------------------------
@@ -60,13 +62,13 @@ This stage unfollows a particular subgroup of your
 1. Mutual Friendships Database
 2. Not interested Friendships Database
 Unfoll these accounts has the advantage that you are keeping following count small,
-which is important for new potential followers looking at your site
+which is important for new potential followers looking at your profile.
 
 Stage 4: Rehabilitate Accounts
 ------------------------------
-This stage tries to reactivate your attention on accounts that had maybe
-forgotten you. It likes a specified random amount of posts of accounts in
-the
+This stage tries to reactivate your attention on accounts that have maybe
+forgotten you. It likes a specified random amount of posts of accounts
+provided by the:
 1. Not interested Friendships Database
 
 Stage 5: Follow new Accounts
@@ -85,61 +87,67 @@ Given on that accounts list the bot
 --------------------------------------------
 """
 
-parser = argparse.ArgumentParser(usage="python3 %(prog)s [options]", description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
+
+
+class CustomFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
+  def __init__(self, prog: typing.Text, indent_increment: int=2, max_help_position: int=24, width: typing.Optional[int]=None) -> None:
+    super().__init__(prog, indent_increment=indent_increment, max_help_position=50, width=width)
+
+parser = argparse.ArgumentParser(usage="python3 %(prog)s [options]", description=description, formatter_class=CustomFormatter)
 api_group = parser.add_argument_group("API", "Instagram API relevant Options")
-api_group.add_argument("-c", "--client_file", type=pathlib.Path, help="The instauto ApiClient file. It usually starts with a .\nThis file can be used to avoiding relogin every time you start the bot.\n")
-api_group.add_argument("-u", "--username", type=str, help="The username to be used when when logging in to Instagram")
-api_group.add_argument("-p", "--password", type=str, help="The username to be used when logging in to Instagram")
-api_group.add_argument("--force_login", action="store_true", help="By default, if username is specified, instabotAI will try to recover previous sessions to avoiding relogin.\nUsing this switch you can force the bot to relogin to your instagram account.\nNOTE: with  this switch turned on the --username and --passowrd options have to be supplied!")
+api_group.add_argument("-c", "--client_file", type=pathlib.Path, help="Instauto ApiClient file. It usually starts with a \".\"\nUsed to avoid relogin")
+api_group.add_argument("-u", "--username", type=str, help="Username used when logging in to Instagram")
+api_group.add_argument("-p", "--password", type=str, help="Password used when logging in to Instagram")
+api_group.add_argument("--force_login", action="store_true", help="Force login with username and password.")
 
 general_group = parser.add_argument_group("General", "General instabotAI Options")
-general_group.add_argument("-o", "--own_acc_friendships_search_count", type=int, nargs=2, default=[100, 20], help="How many followers/followings to retrieve maximum on your own account")
-general_group.add_argument("-d", "--delay", type=float, default=45, help="Delay in seconds to wait between calls to instagram")
+general_group.add_argument("-o", "--own_acc_friendships_search_count", type=int, nargs=2, default=[100, 20], help="Maximum followers/followings retrieved on your own account")
+general_group.add_argument("--delay", type=float, default=45, help="Delay in seconds between calls to instagram")
 general_group.add_argument("--delay_variance", type=float, default=5, help="Variance in seconds to randomize delay. Delay will be between (delay-delay_variance) and (delay+delay_variance)")
 general_group.add_argument("-v", "--verbosity", action="count", default=0, help="Verbosity level: specify more flags to get more verbosity")
 #TODO: LOGGING
 
 db_group = parser.add_argument_group("Database", "Database relevant Options")
-db_group.add_argument("-a", "--auto_save", action="store_true", help="When specified save databasese on each new input automatic")
-db_group.add_argument("--input_db_size", type=int, default=None, help="Maximum size of accounts that can be stored in the input_db")
-db_group.add_argument("--mutual_db_size", type=int, default=None, help="Maximum size of accounts that can be stored in the mutual_db")
-db_group.add_argument("--not_interested_db_size", type=int, default=None, help="Maximum size of accounts that can be stored in the not_interested_db")
+db_group.add_argument("-a", "--auto_save", action="store_true", help="Automatically save databases on each new input")
+db_group.add_argument("--input_db_size", type=int, default=None, help="Maximum size of input_db")
+db_group.add_argument("--mutual_db_size", type=int, default=None, help="Maximum size of mutual_db")
+db_group.add_argument("--not_interested_db_size", type=int, default=None, help="Maximum size of not_interested_db")
 
 find_accounts_group = parser.add_argument_group("Find Accounts Stage", "Options relevant for the Find Same Accounts Stage")
-find_accounts_group.add_argument("-f", "--find_accounts", action="store_true", help="Wether this stage executes or not")
-find_accounts_group.add_argument("-s", "--search_filter", action="append", type=int, nargs=2, help="Mark only accounts with more than / less than folowers / followings as valid accounts")
+find_accounts_group.add_argument("-f", "--find_accounts", action="store_true", help="Enable this stage")
+find_accounts_group.add_argument("-s", "--search_filter", action="append", type=int, nargs=2, help="Mark only accounts with [more followers than, less followings than] as valid accounts")
 find_accounts_group.add_argument("--usernames_search_file", type=pathlib.Path, help="Optional file with accounts that will be used during this stage")
 find_accounts_group.add_argument("--hashtags_search_file", type=pathlib.Path, help="Optional file with hashtags that will be used during this stage")
-find_accounts_group.add_argument("--usernames_search_percentage", type=float, default=0.25, help="How many accounts in percent add from the username search")
-find_accounts_group.add_argument("--hashtags_search_percentage", type=float, default=0.75, help="How many accounts in percent add from the hashtags search")
-find_accounts_group.add_argument("--usernames_friendships_search_count", type=int, nargs=2, default=[100, 200], help="How many followers / followings to retrieve of acounts which are found during the username search")
-find_accounts_group.add_argument("--hashtags_friendships_search_count", type=int, nargs=2, default=[500, 1000], help="How many followers / followings to retrieve of acounts which are found during the hashtags search")
+find_accounts_group.add_argument("--usernames_search_percentage", type=float, default=0.25, help="Portion of accounts from the username search to add (in %%)")
+find_accounts_group.add_argument("--hashtags_search_percentage", type=float, default=0.75, help="Portion of accounts from the hashtags search to add (in %%)")
+find_accounts_group.add_argument("--usernames_friendships_search_count", type=int, nargs=2, default=[100, 200], help="Maximum followers/followings retrieved on acounts found during username search")
+find_accounts_group.add_argument("--hashtags_friendships_search_count", type=int, nargs=2, default=[500, 1000], help="Maximum followers/followings retrieved on acounts found during hashtags search")
 
 categorize_accounts_group = parser.add_argument_group("Categorize Accounts Stage", "Options relevant for the Categorize Accounts Stage")
-categorize_accounts_group.add_argument("-g", "--categorize_accounts", action="store_true", help="Wether this stage ececutes or not")
+categorize_accounts_group.add_argument("-g", "--categorize_accounts", action="store_true", help="Enable this stage")
 categorize_accounts_group.add_argument("--unfollow_blacklist_file", type=pathlib.Path, help="Optional File with accounts excluded from unfollowing")
-categorize_accounts_group.add_argument("--reverse_following_count", type=int, default=100, help="How many followings to retrieve before decideding wether account is following back or not. (Instagram usually puts own acc in first few accounts so can be small)")
+categorize_accounts_group.add_argument("--reverse_following_count", type=int, default=100, help="How many followings to retrieve before deciding wether account is following back or not")
 
 unfollow_accounts_group = parser.add_argument_group("Unfollow Accounts Stage", "Options relevant for the Unfollow Accounts Stage")
-unfollow_accounts_group.add_argument("-w", "--unfollow_accounts", action="store_true", help="Wether this stage executes or not")
-unfollow_accounts_group.add_argument("--mutual_unfollow_percentage", type=float, default=0.03, help="Percentage of current accounts in mutual_db that are unfollowed")
-unfollow_accounts_group.add_argument("--not_interested_unfollow_percentage", type=float, default=0.05, help="Percentage of current accounts in not_interested_db that are unfollowed")
+unfollow_accounts_group.add_argument("-w", "--unfollow_accounts", action="store_true", help="Enable this stage")
+unfollow_accounts_group.add_argument("--mutual_unfollow_percentage", type=float, default=0.03, help="Percentage of current accounts in mutual_db that will be unfollowed")
+unfollow_accounts_group.add_argument("--not_interested_unfollow_percentage", type=float, default=0.05, help="Percentage of current accounts in not_interested_db that will be unfollowed")
 
 rehabilitate_accounts_group = parser.add_argument_group("Rehabilitate Accounts Stage", "Options relevant for the Rehabilitate Accounts Stage")
-rehabilitate_accounts_group.add_argument("-r", "--rehabilitate_accounts", action="store_true", help="Wether or not this stage executes")
-rehabilitate_accounts_group.add_argument("--min_likes", type=int, default=2, help="Minimum posts from an account that are liked")
-rehabilitate_accounts_group.add_argument("--max_likes", type=int, default=3, help="Maximum posts from an account that are liked")
-rehabilitate_accounts_group.add_argument("--rehabilitate_percentage", type=float, default=0.25, help="Percentage of current accounts in not_interested_db that are rehabilitated")
+rehabilitate_accounts_group.add_argument("-r", "--rehabilitate_accounts", action="store_true", help="Enable this stage")
+rehabilitate_accounts_group.add_argument("--min_likes", type=int, default=2, help="Minimum posts that are liked per acount")
+rehabilitate_accounts_group.add_argument("--max_likes", type=int, default=3, help="Maximum posts that are liked per account")
+rehabilitate_accounts_group.add_argument("--rehabilitate_percentage", type=float, default=0.25, help="Percentage of current accounts in not_interested_db that will be rehabilitated")
 
 follow_accounts_group = parser.add_argument_group("Follow Accounts Stage", "Options relevant for the Follow Accounts Stage")
-follow_accounts_group.add_argument("-n", "--follow_accounts", "--new_accounts", action="store_true", help="Wether this stage executes ore not")
-follow_accounts_group.add_argument("--accounts_to_scan", type=int, default=1, help="Number of accounts in the input_db to scan for new accounts input")
-follow_accounts_group.add_argument("--bot_input_followers", type=int, default=100, help="Number of Followers of the scaned accounts that are processed")
-follow_accounts_group.add_argument("--bot_input_likers", type=int, default=200, help="Number of Likers of the scaned accounts that are processed")
-follow_accounts_group.add_argument("--bot_input_commenters", type=int, default=200, help="Number of Commenters of the scaned accounts that are processed")
+follow_accounts_group.add_argument("-n", "--follow_accounts", "--new_accounts", action="store_true", help="Enable this stage")
+follow_accounts_group.add_argument("--accounts_to_scan", type=int, default=1, help="Number of scanned accounts in the input_db")
+follow_accounts_group.add_argument("--bot_input_followers", type=int, default=100, help="Number of Followers of the scanned accounts that are processed")
+follow_accounts_group.add_argument("--bot_input_likers", type=int, default=200, help="Number of Likers of the scanned accounts that are processed")
+follow_accounts_group.add_argument("--bot_input_commenters", type=int, default=200, help="Number of Commenters of the scanned accounts that are processed")
 follow_accounts_group.add_argument("--max_likes_per_user", type=int, help="Maximum likes an account can get")
-follow_accounts_group.add_argument("--like_chance", type=int, default=0.35, help="Chance in percentage to proceed on an account to liking")
-follow_accounts_group.add_argument("--follow_chance", type=int, default=0.02, help="Chance in percentage to proceed on an account to following")
+follow_accounts_group.add_argument("--like_chance", type=int, default=0.35, help="Chance in percentage to like posts of a new account")
+follow_accounts_group.add_argument("--follow_chance", type=int, default=0.02, help="Chance in percentage to follow a new account to following")
 
 
 def get_client(args):
