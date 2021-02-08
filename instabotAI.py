@@ -91,12 +91,30 @@ epilog = """
 
 
 Examples:
-python3 %(prog)s -c ./.myaccount.instauto.save
-python3 %(prog)s -u myaccount -p p4ssw0rd 
-python3 %(prog)s -u myaccount -p p4ssw0rd --force-login
-python3 %(prog)s -u myaccount -p p4ssw0rd -o 100,20 --delay 50 -a --find
+Login with client file:
+  python3 %(prog)s -c ./.myaccount.instauto.save
+Try to automatically find client file:
+  python3 %(prog)s -u myaccount
+Use credentials to log in. If client file is found with given username, it is used:
+  python3 %(prog)s -u myaccount -p p4ssw0rd 
+Use credentials to log in and force log in with credentials:
+  python3 %(prog)s -u myaccount -p p4ssw0rd --force-login
+
+Find same accounts with specified usernames/-hashtags file:
+  python3 %(prog)s -c ./.myaccount.instauto.save -f --usernames-search-file=owndir/usernames.txt --hashtags-search-file=owndir/hashtags.txt
+Find same accounts with specified delay and autosave:
+  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f
+Find same accounts with more than 500 followers and less than 300 followings:
+  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300
+Find same accounts with 
+1. more than 300 followers and less than 50 followings or
+2. more than 1000 followers and less than 400 followings:
+  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 300,50 -s 1000,400 --usernames-search-file=owndir/usernames.txt --hashtags-search-file=db/hashtags.txt
+Find same accounts only with hashtags:
+  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300 --no-usernames-search
 
 """
+
 
 class CustomFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
   def __init__(self, prog: typing.Text, indent_increment: int=2, max_help_position: int=24, width: typing.Optional[int]=None) -> None:
@@ -125,8 +143,10 @@ db_group.add_argument("--not-interested-db-size", type=int, default=None, help="
 find_accounts_group = parser.add_argument_group("Find Accounts Stage", "Options relevant for the Find Same Accounts Stage")
 find_accounts_group.add_argument("-f", "--find", action="store_true", help="Enable this stage")
 find_accounts_group.add_argument("-s", "--search-filter", action="append", type=int, nargs=2, help="Mark only accounts with [more followers than, less followings than] as valid accounts")
-find_accounts_group.add_argument("--usernames-search-file", type=pathlib.Path, help="Optional file with accounts that will be used during this stage")
-find_accounts_group.add_argument("--hashtags-search-file", type=pathlib.Path, help="Optional file with hashtags that will be used during this stage")
+find_accounts_group.add_argument("--usernames-search-file", type=pathlib.Path, default="config/usernames.txt", help="Optional file with accounts that will be scanned during this stage")
+find_accounts_group.add_argument("--hashtags-search-file", type=pathlib.Path, default="config/hashtags.txt", help="Optional file with hashtags that will be scanned during this stage")
+find_accounts_group.add_argument("--no-usernames-search", action="store_true", help="Exclude usernames search")
+find_accounts_group.add_argument("--no-hashtags-search", action="store_true", help="Exclude hashtags search")
 find_accounts_group.add_argument("--usernames-search-percentage", type=float, default=0.25, help="Portion of accounts from the username search to add (in %%)")
 find_accounts_group.add_argument("--hashtags-search-percentage", type=float, default=0.75, help="Portion of accounts from the hashtags search to add (in %%)")
 find_accounts_group.add_argument("--usernames-friendships-search-count", type=int, nargs=2, default=[100, 200], help="Maximum followers/followings retrieved on acounts found during username search")
@@ -190,7 +210,7 @@ def get_instabot(args, client):
 def get_find_same_accounts_stage(args, client, input_db):
   find_same_account_stage = instabotAI.stages.FindSameAccountsStage(input_db)
 
-  if(args.hashtags_search_file):
+  if(not args.no_hashtags_search):
     hashtags_files_input = file_adapter.FilesInputStream()
     hashtags_files_input.add_file(args.hashtags_search_file)
     hashtags_friendships_search_count = instabotAI.account.FriendshipsSearchCount(*args.hashtags_friendships_search_count)
@@ -199,7 +219,7 @@ def get_find_same_accounts_stage(args, client, input_db):
       hashtags_account_finder.add_filterer(account_filterer.AccountFilterer(*f))
     find_same_account_stage.add_account_finder(hashtags_account_finder, AccountsDatabaseLimitCalculator(input_db).from_free_space().percentage(args.hashtags_search_percentage))
 
-  if(args.usernames_search_file):
+  if(not args.no_usernames_search):
     usernames_files_input = file_adapter.FilesInputStream()
     usernames_files_input.add_file(args.usernames_search_file)
     usernames_friendships_search_count = instabotAI.account.FriendshipsSearchCount(*args.usernames_friendships_search_count)
