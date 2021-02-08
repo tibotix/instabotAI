@@ -32,12 +32,12 @@ class AccountFinder():
 
   def _filter_accounts_stream(self, accounts: Iterator[account.Account]) -> Iterable[account.Account]:
     for acc in accounts:
-      if(self._valid_account(acc)):
+      if(self._is_valid_account(acc)):
         self.found_accounts += 1
         print("Found valid acc: {0}".format(str(acc)))
         yield acc
 
-  def _valid_account(self, acc: account.Account):
+  def _is_valid_account(self, acc: account.Account):
     if(len(self.filters) == 0): return True
     for filterer in self.filters:
       if(filterer.is_valid_account(acc)):
