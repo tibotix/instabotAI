@@ -87,13 +87,21 @@ Given on that accounts list the bot
 --------------------------------------------
 """
 
+epilog = """
 
+
+Examples:
+python3 %(prog)s -c ./.myaccount.instauto.save
+python3 %(prog)s -u myaccount -p p4ssw0rd 
+python3 %(prog)s -u myaccount -p p4ssw0rd --force-login
+
+"""
 
 class CustomFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
   def __init__(self, prog: typing.Text, indent_increment: int=2, max_help_position: int=24, width: typing.Optional[int]=None) -> None:
     super().__init__(prog, indent_increment=indent_increment, max_help_position=50, width=width)
 
-parser = argparse.ArgumentParser(usage="python3 %(prog)s [options]", description=description, formatter_class=CustomFormatter)
+parser = argparse.ArgumentParser(usage="python3 %(prog)s [options]", description=description, epilog=epilog, formatter_class=CustomFormatter)
 api_group = parser.add_argument_group("API", "Instagram API relevant Options")
 api_group.add_argument("-c", "--client_file", type=pathlib.Path, help="Instauto ApiClient file. It usually starts with a \".\"\nUsed to avoid relogin")
 api_group.add_argument("-u", "--username", type=str, help="Username used when logging in to Instagram")
@@ -256,7 +264,7 @@ def main(args):
   not_interested_db.save()
   mutual_db.save()
 
-#client = ApiClient("itsmyvision.de", "d3lph1", testing=True)
+
 #client = ApiClient.initiate_from_file("./.itsmyvision.de.save")
 #client.login()
 
