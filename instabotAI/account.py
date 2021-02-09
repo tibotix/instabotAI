@@ -4,6 +4,7 @@ from instabotAI.action_delayer import ActionDelayer
 from instauto.helpers.search import get_user_by_username
 from instauto.helpers.friendships import get_followers, get_following
 from instauto.api.actions.structs.profile import Info
+from instauto.api.actions.friendships import Show
 
 from instabotAI.account_friendships import *
 
@@ -12,9 +13,14 @@ class Account():
     self.client = client
     self.account_dict = account_dict
     self._check_valid_account_dict()
+    self._create_friendship_status()
     self.friendships_search_count = (friendships_search_count if (friendships_search_count is not None) else FriendshipsSearchCount(5000, 5000))
     self.followers_storage = AccountsFollowersStorage(self)
     self.following_storage = AccountsFollowingStorage(self)
+
+  def _create_friendship_status(self):
+    if("friendships_status" not in self.account_dict):
+      self.account_dict["friendships_status"] = dict()
 
   def _check_valid_account_dict(self):
     if(not isinstance(self.account_dict, dict)):
@@ -66,10 +72,20 @@ class Account():
     yield from self.following_storage.stream_friendships(limit)
 
   @functools.cached_property
+  def is_follwing_you(self):
+    if("followed_by" not in self.account_dict["friendship_status"]):
+      self._extend_friendship_status()
+    if("followed_by" not in self.account_dict["friendship_status"]):
+      return self.is_following_acc(self.client.own_acc)
+    return self.account_dict["friendship_status"]["followed_by"]
+
+  @functools.cached_property
   def is_followed_by_you(self):
-    if("friendship_status" in self.account_dict and "following" in self.account_dict["friendship_status"]):
-      return self.account_dict["friendship_status"]["following"]
-    return self.is_followed_by_acc(self.client.own_acc)
+    if("following" not in self.account_dict["friendship_status"]):
+      self._extend_friendship_status()
+    if("following" not in self.account_dict["friendship_status"]):
+      return self.is_followed_by_acc(self.client.own_acc)
+    return self.account_dict["friendship_status"]["following"]
 
   @functools.lru_cache(maxsize=32)
   def is_following_acc(self, account, limit=None):
@@ -84,6 +100,11 @@ class Account():
       if(acc.user_id == account.user_id):
         return True
     return False
+
+  @ActionDelayer
+  def _extend_friendship_status(self):
+    show = self.client.follower_show(Show(user_id=self.user_id))
+    self.account_dict["friendship_status"].update(show)
 
   @ActionDelayer
   def collect_new_followers(self, count: int) -> List["Account"]:
