@@ -16,4 +16,4 @@ class AccountFilterer():
       yield account
 
   def is_valid_account(self, acc: account.Account):
-    return bool(len(acc.followers_list) >= self.min_followers and len(acc.following_list) <= self.max_followings)
+    return bool(acc.follower_count >= self.min_followers and acc.following_count <= self.max_followings)

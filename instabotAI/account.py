@@ -1,7 +1,6 @@
 from typing import *
 import functools
 from instabotAI.action_delayer import ActionDelayer
-from instauto.helpers.search import get_user_by_username
 from instauto.helpers.friendships import get_followers, get_following
 from instauto.api.actions.structs.profile import Info
 from instauto.api.actions.friendships import Show
@@ -26,6 +25,9 @@ class Account():
     if(not isinstance(self.account_dict, dict)):
       raise TypeError("AccountDict has to be a dict, not {0}".format(str(type(self.account_dict))))
 
+  def _extend_account_dict(self):
+    self.account_dict.update(self.client.profile_info(Info(user_id=self.user_id)))
+
   def __str__(self):
     return "Account: {0}".format(str(self.username))
 
@@ -42,24 +44,28 @@ class Account():
 
   @property
   def user_id(self):
-    return self.account_dict.get("pk")
+    return self.account_dict.get("pk", "")
 
   @functools.cached_property
   def username(self):
     print("Getting Username for user_id: {0}".format(str(self.user_id)))
     if("username" not in self.account_dict):
-      self.account_dict.update(self.client.profile_info(Info(user_id=self.user_id)))
+      self._extend_account_dict()
     return self.account_dict["username"]
 
   @functools.cached_property
-  def followers_list(self):
-    print("getting followers_list for {0}".format(str(self.username)))
-    return list(self.stream_followers())
+  def follower_count(self):
+    print("getting follower_count for {0}".format(str(self.username)))
+    if("follower_count" not in self.account_dict):
+      self._extend_account_dict()
+    return self.account_dict["follower_count"]
 
   @functools.cached_property
-  def following_list(self):
-    print("getting following_list for {0}".format(str(self.username)))
-    return list(self.stream_following())
+  def following_count(self):
+    print("getting following_count for {0}".format(str(self.username)))
+    if("following_count" not in self.account_dict):
+      self._extend_account_dict()
+    return self.account_dict["following_count"]
 
   def stream_followers(self, limit=None):
     print("stream followers for {0}".format(str(self.username)))
@@ -119,7 +125,7 @@ class Account():
   @functools.lru_cache(maxsize=128)
   @ActionDelayer
   def from_username(cls, client, username, friendships_search_count=None):
-    account_dict = get_user_by_username(client, username)
+    account_dict = client.profile_info(Info(username=username))
     return cls(client, account_dict, friendships_search_count=friendships_search_count)
 
   @classmethod
