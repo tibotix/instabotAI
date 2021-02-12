@@ -81,7 +81,7 @@ class Account():
     if("followed_by" not in self.account_dict["friendship_status"]):
       self._extend_friendship_status()
     if("followed_by" not in self.account_dict["friendship_status"]):
-      return self.is_following_acc(self.client.own_acc)
+      return self.is_following_acc(self.client.own_acc, 200)
     return self.account_dict["friendship_status"]["followed_by"]
 
   @functools.cached_property
@@ -89,7 +89,7 @@ class Account():
     if("following" not in self.account_dict["friendship_status"]):
       self._extend_friendship_status()
     if("following" not in self.account_dict["friendship_status"]):
-      return self.is_followed_by_acc(self.client.own_acc)
+      return self.is_followed_by_acc(self.client.own_acc, 200)
     return self.account_dict["friendship_status"]["following"]
 
   @functools.lru_cache(maxsize=32)
