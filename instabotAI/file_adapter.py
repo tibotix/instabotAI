@@ -1,6 +1,7 @@
 import random
 import functools
-      
+import os
+import termcolor
 
 class FileAdapter():
   def __init__(self, file_name):
@@ -10,14 +11,23 @@ class FileAdapter():
   def readlines(self):
     lines = list()
     with open(self.file_name, "r") as f:
-      lines = f.readlines()
+      lines = self._save_readlines(f)
     return lines
+
+  def _save_readlines(self, file):
+    try:
+      return file.readlines()
+    except IOError as e:
+      print(termcolor.colored(f"Error while reading from {self.file_name}: {str(e)}", "magenta"))
+      return list()
 
 class FilesInputStream():
   def __init__(self):
     self.file_adapters = list()
 
   def add_file(self, file_name):
+    if(not os.path.exists(file_name)):
+      print(termcolor.colored(f"WARNING: Couldnt open {file_name}. File does not exists!", "magenta")) #TODO:Logging
     self.file_adapters.append(FileAdapter(file_name))
 
   def get_lines(self, limit=None):
