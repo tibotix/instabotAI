@@ -8,9 +8,9 @@ class AccountInsigths():
     self.dont_follow_back = list()
     self.mutual_friendship = list()
 
-  def analyze_insights(self, reverse_following_count: int=100):
+  def analyze_insights(self, reverse_following_count: int=100, limit=None):
     print("analyzing insights for {0}".format(str(self.acc.username)))
-    for following in self.acc.stream_following():
+    for following in self.acc.stream_following(limit=limit):
       if(following.is_following_acc(self.acc, reverse_following_count)):
         print("adding mutual friendship between {0} - {1}".format(str(following.username), str(self.acc.username)))
         self.mutual_friendship.append(following)
