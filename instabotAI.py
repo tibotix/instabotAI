@@ -109,13 +109,17 @@ Find same accounts with more than 500 followers and less than 300 followings:
 Find same accounts with 
 1. more than 300 followers and less than 50 followings or
 2. more than 1000 followers and less than 400 followings:
-  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 300,50 -s 1000,400 --usernames-search-file=owndir/usernames.txt --hashtags-search-file=db/hashtags.txt
+  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 300,50 -s 1000,400
 Find same accounts only with hashtags:
   python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300 --no-usernames-search
+Find same accounts and fill database with 50%% of valid usernames and 50%% of scanned hashtags:
+  python3 %(prog)s -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300 --usernames-search-percentage 0.5 --hashtags-search-percentage 0.5
+
+
 
 """
 
-
+#TODO: Porting all options to config file and specify only one config file to read from (using ConfigArgParse)
 class CustomFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
   def __init__(self, prog: typing.Text, indent_increment: int=2, max_help_position: int=24, width: typing.Optional[int]=None) -> None:
     super().__init__(prog, indent_increment=indent_increment, max_help_position=50, width=width)
@@ -128,7 +132,6 @@ api_group.add_argument("-p", "--password", type=str, help="Password used when lo
 api_group.add_argument("--force-login", action="store_true", help="Force login with username and password.")
 
 general_group = parser.add_argument_group("General", "General instabotAI Options")
-general_group.add_argument("-o", "--own-acc-friendships-search-count", type=int, nargs=2, default=[100, 20], help="Maximum followers/followings retrieved on your own account")
 general_group.add_argument("--delay", type=float, default=45, help="Delay in seconds between calls to instagram")
 general_group.add_argument("--delay-variance", type=float, default=5, help="Variance in seconds to randomize delay. Delay will be between (delay-delay_variance) and (delay+delay_variance)")
 general_group.add_argument("-v", "--verbosity", action="count", default=0, help="Verbosity level: specify more flags to get more verbosity")
@@ -149,13 +152,12 @@ find_accounts_group.add_argument("--no-usernames-search", action="store_true", h
 find_accounts_group.add_argument("--no-hashtags-search", action="store_true", help="Exclude hashtags search")
 find_accounts_group.add_argument("--usernames-search-percentage", type=float, default=0.25, help="Portion of accounts from the username search to add (in %%)")
 find_accounts_group.add_argument("--hashtags-search-percentage", type=float, default=0.75, help="Portion of accounts from the hashtags search to add (in %%)")
-find_accounts_group.add_argument("--usernames-friendships-search-count", type=int, nargs=2, default=[100, 200], help="Maximum followers/followings retrieved on acounts found during username search")
-find_accounts_group.add_argument("--hashtags-friendships-search-count", type=int, nargs=2, default=[500, 1000], help="Maximum followers/followings retrieved on acounts found during hashtags search")
 
 categorize_accounts_group = parser.add_argument_group("Categorize Accounts Stage", "Options relevant for the Categorize Accounts Stage")
 categorize_accounts_group.add_argument("-g", "--categorize", action="store_true", help="Enable this stage")
+categorize_accounts_group.add_argument("--scan_limit", type=int, default=None, help="How many own followings to scan maximum. Defaulting to ALL.")
 categorize_accounts_group.add_argument("--unfollow-blacklist-file", type=pathlib.Path, help="Optional File with accounts excluded from unfollowing")
-categorize_accounts_group.add_argument("--reverse-following-count", type=int, default=100, help="How many followings to retrieve before deciding wether account is following back or not")
+categorize_accounts_group.add_argument("--reverse-following-count", type=int, default=100, help="How many followings to trace back before deciding wether account is following back or not")
 
 unfollow_accounts_group = parser.add_argument_group("Unfollow Accounts Stage", "Options relevant for the Unfollow Accounts Stage")
 unfollow_accounts_group.add_argument("-w", "--unfollow", action="store_true", help="Enable this stage")
@@ -204,8 +206,7 @@ def initiate_client_from_file(filename, exit_on_error=True):
       sys.exit(2)
  
 def get_instabot(args, client):
-  friendships_search_count = instabotAI.account.FriendshipsSearchCount(*args.own_acc_friendships_search_count)
-  return InstaBotAI(client, delay_between_actions=args.delay, delay_tolerance=args.delay_variance, friendships_search_count=friendships_search_count)
+  return InstaBotAI(client, delay_between_actions=args.delay, delay_tolerance=args.delay_variance)
 
 def get_find_same_accounts_stage(args, client, input_db):
   find_same_account_stage = instabotAI.stages.FindSameAccountsStage(input_db)
@@ -213,8 +214,7 @@ def get_find_same_accounts_stage(args, client, input_db):
   if(not args.no_hashtags_search):
     hashtags_files_input = file_adapter.FilesInputStream()
     hashtags_files_input.add_file(args.hashtags_search_file)
-    hashtags_friendships_search_count = instabotAI.account.FriendshipsSearchCount(*args.hashtags_friendships_search_count)
-    hashtags_account_finder = instabotAI.account_finder.HashtagsAccountFinder(hashtags_files_input, client, friendships_search_count=hashtags_friendships_search_count)
+    hashtags_account_finder = instabotAI.account_finder.HashtagsAccountFinder(hashtags_files_input, client)
     for f in args.search_filterer:
       hashtags_account_finder.add_filterer(account_filterer.AccountFilterer(*f))
     find_same_account_stage.add_account_finder(hashtags_account_finder, AccountsDatabaseLimitCalculator(input_db).from_free_space().percentage(args.hashtags_search_percentage))
@@ -222,8 +222,7 @@ def get_find_same_accounts_stage(args, client, input_db):
   if(not args.no_usernames_search):
     usernames_files_input = file_adapter.FilesInputStream()
     usernames_files_input.add_file(args.usernames_search_file)
-    usernames_friendships_search_count = instabotAI.account.FriendshipsSearchCount(*args.usernames_friendships_search_count)
-    usernames_account_finder = instabotAI.account_finder.ManualUsernamesAccountFinder(usernames_files_input, client, friendships_search_count=usernames_friendships_search_count)
+    usernames_account_finder = instabotAI.account_finder.ManualUsernamesAccountFinder(usernames_files_input, client)
     find_same_account_stage.add_account_finder(usernames_account_finder, AccountsDatabaseLimitCalculator(input_db).from_free_space().percentage(args.usernames_search_percentage))
   
   return find_same_account_stage
@@ -232,7 +231,7 @@ def get_find_same_accounts_stage(args, client, input_db):
 def get_categorize_accounts_stage(args, not_interested_db, mutual_db):
   unfollow_blacklist_file_input = file_adapter.FilesInputStream()
   unfollow_blacklist_file_input.add_file(args.unfollow_blacklist_file)
-  return instabotAI.stages.CategorizeAccountsStage(not_interested_db, mutual_db, unfollow_blacklist_file_input, reverse_following_count=args.reverse_following_count)
+  return instabotAI.stages.CategorizeAccountsStage(not_interested_db, mutual_db, unfollow_blacklist_file_input, reverse_following_count=args.reverse_following_count, scan_limit=args.scan_limit)
 
 def get_unfollow_accounts_stage(args, not_interested_db, mutual_db):
   return instabotAI.stages.UnfollowAccountsStage(not_interested_db, mutual_db, not_interested_unfollow_percentage=args.not_interested_unfollow_percentage, mutual_unfollow_percentage=args.mutual_unfollow_percentage)

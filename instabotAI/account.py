@@ -8,12 +8,11 @@ from instauto.api.actions.friendships import Show
 from instabotAI.account_friendships import *
 
 class Account():
-  def __init__(self, client, account_dict, friendships_search_count=None):
+  def __init__(self, client, account_dict):
     self.client = client
     self.account_dict = account_dict
     self._check_valid_account_dict()
     self._create_friendship_status()
-    self.friendships_search_count = (friendships_search_count if (friendships_search_count is not None) else FriendshipsSearchCount(5000, 5000))
     self.followers_storage = AccountsFollowersStorage(self)
     self.following_storage = AccountsFollowingStorage(self)
 
@@ -69,12 +68,12 @@ class Account():
 
   def stream_followers(self, limit=None):
     print("stream followers for {0}".format(str(self.username)))
-    limit = limit if(limit is not None) else self.friendships_search_count.max_followers_to_retrieve
+    limit = limit if(limit is not None) else self.follower_count
     yield from self.followers_storage.stream_friendships(limit)
 
   def stream_following(self, limit=None):
     print("stream following for {0}".format(str(self.username)))
-    limit = limit if(limit is not None) else self.friendships_search_count.max_following_to_retrieve
+    limit = limit if(limit is not None) else self.following_count
     yield from self.following_storage.stream_friendships(limit)
 
   @functools.cached_property
@@ -114,36 +113,29 @@ class Account():
 
   @ActionDelayer
   def collect_new_followers(self, count: int) -> List["Account"]:
-    return [Account(self.client, account_dict, friendships_search_count=self.friendships_search_count) for account_dict in get_followers(self.client, self.user_id, count)]
+    return [Account(self.client, account_dict) for account_dict in get_followers(self.client, self.user_id, count)]
 
   @ActionDelayer
   def collect_new_following(self, count: int) -> List["Account"]:
-    return [Account(self.client, account_dict, friendships_search_count=self.friendships_search_count) for account_dict in get_following(self.client, self.user_id, count)]
+    return [Account(self.client, account_dict) for account_dict in get_following(self.client, self.user_id, count)]
 
 
   @classmethod
   @functools.lru_cache(maxsize=128)
   @ActionDelayer
-  def from_username(cls, client, username, friendships_search_count=None):
+  def from_username(cls, client, username):
     account_dict = client.profile_info(Info(username=username))
-    return cls(client, account_dict, friendships_search_count=friendships_search_count)
+    return cls(client, account_dict)
 
   @classmethod
   @functools.lru_cache(maxsize=128)
   @ActionDelayer
-  def from_user_id(cls, client, user_id, friendships_search_count=None):
+  def from_user_id(cls, client, user_id):
     account_dict = client.profile_info(Info(user_id=user_id))
-    return cls(client, account_dict, friendships_search_count=friendships_search_count)
+    return cls(client, account_dict)
 
   @classmethod
   @ActionDelayer
-  def from_hashtag_post(cls, client, hashtag_post, friendships_search_count=None):
+  def from_hashtag_post(cls, client, hashtag_post):
     account_dict = hashtag_post.get("user")
-    return cls(client, account_dict, friendships_search_count=friendships_search_count)
-
-
-
-class FriendshipsSearchCount():
-  def __init__(self, max_followers_to_retrieve, max_following_to_retrieve):
-      self.max_followers_to_retrieve = max(max_followers_to_retrieve, 0)
-      self.max_following_to_retrieve = max(max_following_to_retrieve, 0)
+    return cls(client, account_dict)

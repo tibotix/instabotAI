@@ -4,18 +4,17 @@ from typing import *
 from instauto.api.client import ApiClient
 from instauto.api.exceptions import StateExpired
 
-from instabotAI import stages
+from instabotAI import stages, account
 import termcolor
 
 
 
 
 class InstaBotAI():
-  def __init__(self, client: ApiClient, delay_between_actions: float=20.0, delay_tolerance: float=10.0, friendships_search_count=None):
+  def __init__(self, client: ApiClient, delay_between_actions: float=20.0, delay_tolerance: float=10.0):
     self._set_delay_time(delay_between_actions, delay_tolerance)
     self.client = client
     self._check_client_state()
-    self.friendships_search_count = friendships_search_count
     self.stages = list()
 
   def _set_delay_time(self, delay_between_actions: float, delay_tolerance: float):
@@ -37,7 +36,7 @@ class InstaBotAI():
     self._start()
 
   def _start(self):
-    self.client.own_acc = Account.from_user_id(self.client, self.client.state.user_id, friendships_search_count=self.friendships_search_count)
+    self.client.own_acc = Account.from_user_id(self.client, self.client.state.user_id)
     for stage in self.stages:
       stage.set_client(self.client)
       stage.start()

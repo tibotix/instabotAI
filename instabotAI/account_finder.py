@@ -9,9 +9,8 @@ from instabotAI.account_filterer import AccountFilterer
 
 
 class AccountFinder():
-  def __init__(self, client: ApiClient, friendships_search_count: account.FriendshipsSearchCount=None):
+  def __init__(self, client: ApiClient):
     self.client = client
-    self.friendships_search_count = friendships_search_count
     self.filters = list()
     self.found_accounts = 0
 
@@ -50,22 +49,22 @@ class AccountFinder():
 
 
 class ManualUsernamesAccountFinder(AccountFinder):
-  def __init__(self, files_input, client, friendships_search_count=None):
-    super().__init__(client, friendships_search_count=friendships_search_count)
+  def __init__(self, files_input, client):
+    super().__init__(client)
     self.files_input = files_input
 
   def _populate_accounts_stream(self, results_limits) -> Iterator[account.Account]:
     for username in self.files_input.get_randomized_lines(limit=results_limits):
       try:
-        acc = account.Account.from_username(self.client, username, friendships_search_count=self.friendships_search_count)
+        acc = account.Account.from_username(self.client, username)
         yield acc
       except Exception as e:
         print("Exception : {0}".format(str(e)))
 
 
 class HashtagsAccountFinder(AccountFinder):
-  def __init__(self, files_input, client, friendships_search_count=None):
-    super().__init__(client, friendships_search_count=friendships_search_count)
+  def __init__(self, files_input, client):
+    super().__init__(client)
     self.files_input = files_input
 
   @ActionDelayer
@@ -78,7 +77,7 @@ class HashtagsAccountFinder(AccountFinder):
   def _convert_to_accounts_stream(self, posts):
     for post in posts:
       try:
-        yield account.Account.from_hashtag_post(self.client, post, friendships_search_count=self.friendships_search_count)
+        yield account.Account.from_hashtag_post(self.client, post)
       except Exception as e:
         print("Exception: {0}".format(str(e)))
 
