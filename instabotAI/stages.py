@@ -53,16 +53,17 @@ class FindSameAccountsStage(Stage):
 
 
 class CategorizeAccountsStage(Stage):
-  def __init__(self, not_interested_db: AccountsDatabase, mutual_db: AccountsDatabase, unfollow_blacklist_file_input: file_adapter.FilesInputStream, reverse_following_count: Optional[int]=None):
+  def __init__(self, not_interested_db: AccountsDatabase, mutual_db: AccountsDatabase, unfollow_blacklist_file_input: file_adapter.FilesInputStream, reverse_following_count: Optional[int]=None, scan_limit: Optional[int]=None):
     super().__init__()
     self.not_interested_db = not_interested_db
     self.mutual_db = mutual_db
     self.unfollow_blacklist_file_input = unfollow_blacklist_file_input
     self.reverse_following_count = reverse_following_count
+    self.scan_limit = scan_limit
 
   def _start(self):
     account_insigth = AccountInsigths(self.client, self.client.own_acc)
-    account_insigth.analyze_insights(self.reverse_following_count)
+    account_insigth.analyze_insights(self.reverse_following_count, limit=self.scan_limit)
     not_interested_accounts = account_insigth.filter_dont_follow_back()
     mutual_friendships_accounts = account_insigth.filter_mutual_friendship()
     self.not_interested_db.append_from_stream(self._filter_blacklisted_accounts_stream(not_interested_accounts))
