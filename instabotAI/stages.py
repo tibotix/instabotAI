@@ -7,7 +7,7 @@ from instabotAI import action_delayer
 from instabotAI.AccountInteractions.account_unfollower import AccountUnfollower
 from instabotAI.AccountInteractions.account_liker import AccountLiker
 from instabotAI.account import Account
-from instabotAI.account_insigths import AccountInsigths
+from instabotAI.account_insigths import AccountInsigthsFactory
 from instabotAI import file_adapter
 from instabotAI import account_finder
 from instabotAI.accounts_database import AccountsDatabase
@@ -62,7 +62,7 @@ class CategorizeAccountsStage(Stage):
     self.scan_limit = scan_limit
 
   def _start(self):
-    account_insigth = AccountInsigths(self.client, self.client.own_acc)
+    account_insigth = AccountInsigthsFactory.create_account_insight_class(self.client, self.client.own_acc)
     account_insigth.analyze_insights(self.reverse_following_count, limit=self.scan_limit)
     not_interested_accounts = account_insigth.filter_dont_follow_back()
     mutual_friendships_accounts = account_insigth.filter_mutual_friendship()
