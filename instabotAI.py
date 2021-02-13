@@ -150,8 +150,8 @@ find_accounts_group.add_argument("--usernames-search-file", type=pathlib.Path, d
 find_accounts_group.add_argument("--hashtags-search-file", type=pathlib.Path, default="config/hashtags.txt", help="File with hashtags that will be scanned during this stage")
 find_accounts_group.add_argument("--no-usernames-search", action="store_true", help="Exclude usernames search")
 find_accounts_group.add_argument("--no-hashtags-search", action="store_true", help="Exclude hashtags search")
-find_accounts_group.add_argument("--usernames-search-percentage", type=float, default=0.25, help="Portion of accounts from the username search to add (in %%)")
-find_accounts_group.add_argument("--hashtags-search-percentage", type=float, default=0.75, help="Portion of accounts from the hashtags search to add (in %%)")
+find_accounts_group.add_argument("--usernames-search-percentage", type=float, default=0.25, help="Amount of Accounts to add from the username search to the input_db based on percentage of free space in input_db")
+find_accounts_group.add_argument("--hashtags-search-percentage", type=float, default=0.75, help="Amount of Accounts to add from the hashtags search to the input_db based on percentage of free space in imput_db")
 
 categorize_accounts_group = parser.add_argument_group("Categorize Accounts Stage", "Options relevant for the Categorize Accounts Stage")
 categorize_accounts_group.add_argument("-g", "--categorize", action="store_true", help="Enable this stage")
@@ -250,8 +250,8 @@ def get_follow_accounts_stage(args, input_db):
 
 
 def main(args):
-  if(args.hashtags_search_percentage+args.usernames_search_percentage != 1):
-    parser.error("hashtags_search_percentage + usernames_search_percentage has to be 100%!")
+  if(args.hashtags_search_percentage+args.usernames_search_percentage > 1):
+    parser.error("hashtags_search_percentage + usernames_search_percentage cannot be greater than 100%!")
 
   client = get_client(args)
   print(termcolor.colored("[*] Got ApiClient", "blue"))
