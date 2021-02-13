@@ -42,9 +42,9 @@ class FindSameAccountsStage(Stage):
 
   def _check_limits_with_limit(self, limit, raise_on_limit_overflow):
     limits_sum = sum([l for a,l in self.account_finders])
-    if(limits_sum + limit > self.input_db.free_space):
+    if(self.input_db.free_space is not None and limits_sum + limit > self.input_db.free_space):
       if(raise_on_limit_overflow):
-        raise ValueError("Limit overflows free db space")
+        raise ValueError("Limits overflows free db space")
       print("WARNING: Limits will overflow free space on db resulting in rotating entries!") # TODO: Logging
 
   def _start(self):
