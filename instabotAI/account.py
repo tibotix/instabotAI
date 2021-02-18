@@ -17,8 +17,8 @@ class Account():
     self.following_storage = AccountsFollowingStorage(self)
 
   def _create_friendship_status(self):
-    if("friendships_status" not in self.account_dict):
-      self.account_dict["friendships_status"] = dict()
+    if("friendship_status" not in self.account_dict):
+      self.account_dict["friendship_status"] = dict()
 
   def _check_valid_account_dict(self):
     if(not isinstance(self.account_dict, dict)):
@@ -77,7 +77,7 @@ class Account():
     yield from self.following_storage.stream_friendships(limit)
 
   @functools.cached_property
-  def is_follwing_you(self):
+  def is_following_you(self):
     if("followed_by" not in self.account_dict["friendship_status"]):
       self._extend_friendship_status()
     if("followed_by" not in self.account_dict["friendship_status"]):
