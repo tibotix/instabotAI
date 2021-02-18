@@ -108,7 +108,7 @@ class Account():
 
   @ActionDelayer
   def _extend_friendship_status(self):
-    show = self.client.follower_show(Show(user_id=self.user_id))
+    show = self.client.follower_show(Show(user_id=self.user_id)).json()
     self.account_dict["friendship_status"].update(show)
 
   @ActionDelayer
