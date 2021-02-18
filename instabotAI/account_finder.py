@@ -13,6 +13,7 @@ class AccountFinder():
     self.client = client
     self.filters = list()
     self.found_accounts = 0
+    self.stop = False
 
   def add_filterer(self, account_filterer: AccountFilterer):
     self.filters.append(account_filterer)
@@ -20,7 +21,8 @@ class AccountFinder():
   def find_accounts_stream(self, limit: Optional[int]=None, batch_size: int=200) -> Iterable[account.Account]:
     print("Finding {0} new accounts...".format(str(limit)))
     self.found_accounts = 0
-    while(limit is None or self.found_accounts < limit):
+    self.stop = False
+    while(not self.stop and (limit is None or self.found_accounts < limit)):
       print("{0} accounts already found...".format(str(self.found_accounts)))
       results_limit = (limit - self.found_accounts) if(limit is not None) else batch_size
       yield from self._populate_filtered_accounts(results_limit)
@@ -60,6 +62,7 @@ class ManualUsernamesAccountFinder(AccountFinder):
         yield acc
       except Exception as e:
         print("Exception : {0}".format(str(e)))
+    self.stop = True
 
 
 class HashtagsAccountFinder(AccountFinder):
