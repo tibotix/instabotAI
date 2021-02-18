@@ -34,7 +34,7 @@ class FilesInputStream():
     line_counter = 0
     for file_adapter in self.file_adapters:
       for line in file_adapter.readlines():
-        if(limit is not None and line_counter>limit):
+        if(limit is not None and line_counter>=limit):
           break
         line_counter+=1
         yield line.replace('\n', '').strip()
