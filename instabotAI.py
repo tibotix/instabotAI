@@ -97,8 +97,8 @@ follow_accounts_group.add_argument("--bot-input-followers", type=int, default=10
 follow_accounts_group.add_argument("--bot-input-likers", type=int, default=200, help="Number of Likers of the scanned accounts that are processed.", env_var="IAI_FOLLOW_LIKERS")
 follow_accounts_group.add_argument("--bot-input-commenters", type=int, default=200, help="Number of Commenters of the scanned accounts that are processed.",env_var="IAI_FOLLOW_COMMENTERS")
 follow_accounts_group.add_argument("--max-likes-per-user", type=int, help="Maximum likes an account can get.", env_var="IAI_FOLLOW_MAX_LIKES")
-follow_accounts_group.add_argument("--like-chance", type=int, default=0.35, help="Chance in percentage to like posts of a new account.", env_var="IAI_FOLLOW_LIKE_CHANCE")
-follow_accounts_group.add_argument("--follow-chance", type=int, default=0.02, help="Chance in percentage to follow a new account to following.", env_var="IAI_FOLLOW_FOLLOW_CHANCE")
+follow_accounts_group.add_argument("--like-chance", type=float, default=0.35, help="Chance in percentage to like posts of a new account.", env_var="IAI_FOLLOW_LIKE_CHANCE")
+follow_accounts_group.add_argument("--follow-chance", type=float, default=0.02, help="Chance in percentage to follow a new account to following.", env_var="IAI_FOLLOW_FOLLOW_CHANCE")
 
 
 def get_client(args):
