@@ -1,0 +1,460 @@
+.TH instabotAI 1 "01 March 2021" "version 1.0.0" "instabotAI manpage"
+.SH NAME
+instabotAI - An intelligent instagram Bot to gain maximum followers
+.SH SYNOPSIS
+.B instabotAI.py
+.R [-c] [-fgwrn]
+.I [OPTION]
+.R ...
+.SH DESCRIPTION 
+.R instabotAI is an intelligent instagram Bot.
+.br
+.R It uses 5 different stages to get you the most followers on Instagram.
+.br
+.R Each stage acts individually and you can turn individual stages on and off. However, enabled stages will execute always in a predefined order.
+
+
+.B Stage 1: Find Same Accounts
+.RS
+.R This stage tries to find accounts that does the same as you do. So their audience fits the best in your too. instabotAI currently supports 2 ways to find those accounts:
+.br
+.R 1. By user provided hashtags,
+.br
+.R 2. By user provided usernames.
+.br
+.R You can provide both input categories as files with inputs separeted by newlines.
+.br
+.R Found accounts are added to the \fIInputDB\fR.
+.RE
+
+.B Stage 2: Categorize Accounts
+.RS
+.R This stage analyzes your own following / followers insight and categorize these accounts in 2 states:
+.br
+.R 1. Mutual Friendships: Meaning that you follow each other
+.br
+.R 2. Not interested Friendship: Meaning that you follow the account, but the account does not follow you back
+.br
+.R The categorized accounts are finally saved in 
+.br
+.R 1. \fIMutualDB\fR
+.br
+.R 2. \fINotInterestedDB\fR
+.br
+.R respectively.
+.RE
+
+.B Stage 3: Unfollow Accounts
+.RS
+.R This stage unfollows a particular subgroup of the
+.br
+.R 1. \fIMutualDB\fR
+.br
+.R 2. \fINotInterestedDB\fR
+.br
+.R Unfollowing these accounts has the advantage that you are keeping your own following count small, which is important for new potential followers looking the first time at your profile.
+.RE
+
+
+.B Stage 4: Rehabilitate Accounts
+.RS
+.R This stage tries to reactivate your attention on accounts that have maybe forgotten you. The stage likes a limited random amount of posts of accounts provided by the:
+.br
+.R 1. \fINotInterestedDB\fR
+.RE
+
+
+.B Stage 5: Follow new Accounts
+.RS
+.R This stage tries to reach new accounts by following and liking posts of them hoping that they follow you back. It takes a specified amount of accounts in the
+.br
+.R 1. \fIInputDB\fR
+.br
+.R and retrieving based on this account
+.br
+.R 1. a given amount of \fIfollowers\fR following that account
+.br
+.R 2. a given amount of \fIlikers\fR that liked a post of that account
+.br
+.R 3. a given amount of \fIcommenters\fR that commented a post of that account.
+.br
+.R Given that accounts list the bot
+.br
+.R 1. \fILikes\fR with a specified possibility a specified random amount of posts and
+.br
+.R 2. \fIFollows\fR with a specified possibility accounts.
+.RE
+.SH OPTIONS
+.PP
+.R All Options can be specified by an instabotAI \fIConfiguration File\fR. Simply assign each option a value:
+.br
+.R >> key=value
+.br
+.R >> key=[1,2,3]
+.br
+.R or
+.br
+.R >> key: value
+.br
+.R or
+.br
+.R >> --key value
+.br
+.R or
+.br
+.R >> key value
+.br
+.R Individual options are seperated by a newline.
+.br
+.R It is also possible to specify options through \fIEnviroment Variables\fR. Simply set an option that supports \fIEnviroment Variables\fR to a value:
+.br
+.R $ export key=value
+.br
+.R Specified options on the \fICommand Line\fR overwrites \fIEnviroment Variables\fR options which overwrites \fIConfiguration File\fR options which overwrites defaults.
+.br
+.PP
+.B API Options:
+.RS
+.B -c
+.R \fIfile\fR
+.R [env_var: IAI_CONFIG_FILE]
+.RS
+instabotAI Configuration file. Is used to specify all options in a file.
+.RE
+.PP
+.B --client-file
+.R \fIfile\fR
+.R [env_var: IAI_CLIENT_FILE]
+.RS
+Instauto ApiClient file. It usually starts with a "."
+.br
+Used to avoid relogin.
+.RE
+.PP
+.B -u, --username
+.R \fIusername\fR
+.RS
+Username used when logging in to Instagram.
+.RE
+.PP
+.B -p, --password
+.R \fIpassword\fR
+.RS
+Password used when logging in to Instagram.
+.RE
+.PP
+.B --force-login
+.RS
+Force login with username and password.
+.RE
+.RE
+.br
+.PP
+.B General Options:
+.RS
+.B --delay
+.R \fIdelay\fR
+.R [env_var: IAI_DELAY]
+.RS
+Delay in seconds between calls to instagram.
+.RE
+.PP
+.B --delay-variance
+.R \fIvariance\fR
+.R [env_var: IAI_DELAY_VARIANCE]
+.RS
+Variance in seconds to randomize delay. Delay will be between (delay-delay_variance) and (delay+delay_variance).
+.RE
+.PP
+.B -v, --verbose
+.RS
+Verbosity level: specify more flags to get more verbosity.
+.RE
+.RE
+.br
+.PP
+.B Database:
+.RS
+.B -a, --auto-save
+.R [env_var: IAI_AUTO_SAVE]
+.RS
+Automatically save databases on each new input.
+.RE
+.PP
+.B --input-db-size
+.R \fIsize\fR
+.R [env_var: IAI_INPUTDB_SIZE]
+.RS
+Maximum size of \fIInputDB\fR.
+.RE
+.PP
+.B --mutual-db-size
+.R \fIsize\fR
+.R [env_var: IAI_MUTUALDB_SIZE]
+.RS
+Maximum size of \fIMutualDB\fR.
+.RE
+.PP
+.B --not-interested-db-size 
+.R \fIsize\fR
+.R [env_var: IAI_NOTINTERESTEDDB_SIZE]
+.RS
+Maximum size of \fINotInterestedDB\fR.
+.RE
+.RE
+.br
+.PP
+.B Find Accounts Stage:
+.RS
+.B -f, --find
+.RS
+Execute this stage
+.RE
+.PP
+.B -s, --search-filter
+.R [\fIfollowers_minimum \fR, \fIfollowing_maximum\fR]...
+.RS
+Mark only accounts with more followers than \fIfollowers_minimum \fR and less followings than \fIfollowing_maximum \fR as valid accounts.
+.RE
+.PP
+.B --usernames-search-file
+.R \fIfile\fR
+.R [env_var: IAI_USERNAMES_FILE]
+.RS
+File with accounts that will be scanned during this stage.
+.RE
+.PP
+.B --hashtags-search-file
+.R \fIfile\fR
+.R [env_var: IAI_HASHTAGS_FILE]
+.RS
+File with hashtags that will be scanned during this stage.
+.RE
+.PP
+.B --no-usernames-search
+.RS
+Exclude usernames search.
+.RE
+.PP
+.B --no-hashtags-search
+.RS
+Exclude hashtags search.-
+.RE
+.PP
+.B --usernames-search-percentage
+.R \fIpercentage\fR
+.R [env_var: IAI_USERNAMES_SEARCH_PERCENTAGE]
+.RS
+Amount of Accounts to add from the username search to the \fIInputDB\fR based on percentage of free space in \fIInputDB\fR.
+.RE
+.PP
+.B --hashtags-search-percentage
+.R \fIpercentage\fR
+.R [env_var: IAI_HASHTAGS_SEARCH_PERCENTAGE]
+.RS
+Amount of Accounts to add from the hashtags search to the \fIInputDB\fR based on percentage of free space in \fIInputDB\fR.
+.RE
+.RE
+.br
+.PP
+.B Categorize Accounts Stage:
+.RS
+.B -g, --categorize
+.RS
+Execute this stage.
+.RE
+.PP
+.B --scan-limit
+.R \fIlimit\fR
+.R [env_var: IAI_SCAN_LIMIT]
+.RS
+How many own followings to scan maximum. Defaulting to ALL.
+.RE
+.PP
+.B --unfollow-blacklist-file
+.R \fIFile\fR
+.R [env_var: IAI_UNFOLLOW_BLACKLIST_FILE]
+.RS
+Optional File with accounts excluded from unfollowing.
+.RE
+.PP
+.B --reverse-following-count
+.R \fIcount\fR
+.R [env_var: IAI_REVERSE_FOLLOWING_COUNT]
+.RS
+How many followings to trace back before deciding wether account is following back or not.
+.RE
+.RE
+.br
+.PP
+.B Unfollow Accounts Stage
+.RS
+.B -w, --unfollow
+.RS
+Execute this stage.
+.RE
+.PP
+.B --mutual-unfollow-percentage
+.R \fIpercentage\fR
+.R [env_var: IAI_MUTUAL_UNFOLLOW]
+.RS
+Percentage of current accounts in \fIMutualDB\fR that will be unfollowed.
+.RE
+.PP
+.B --not-interested-unfollow-percentage
+.R \fIpercentage\fR
+.R [env_var: IAI_NOTINTERESTEDDB_UNFOLLOW]
+.RS
+Percentage of current accounts in \fINotInterestedDB\fR that will be unfollowed.
+.RE
+.RE
+.br
+.PP
+.B Rehabilitate Accounts Stage
+.RS
+.B -r, --rehabilitate
+.RS
+Execute this stage.
+.RE
+.PP
+.B --min-likes
+.R \fIlikes\fR
+.R [env_var: IAI_REHAB_MIN_LIKES]
+.RS
+Minimum posts that are liked per acount.
+.RE
+.PP
+.B --max-likes
+.R \fIlikes\fR
+.R [env_var: IAI_REHAB_MAX_LIKES]
+.RS
+Maximum posts that are liked per acount.
+.RE
+.PP
+.B --rehabilitate-percentage
+.R \fIpercentage\fR
+.R [env_var: IAI_REHAB_PERCENTAGE]
+.RS
+Percentage of current accounts in \fINotInterestedDB\fR that will be rehabilitated.
+.RE
+.RE
+.br
+.PP
+.B Follow Accounts Stage
+.RS
+.B -n, --follow
+.RS
+Execute this stage.
+.RE
+.PP
+.B --accounts-to-scan
+.R \fIaccounts\fR
+.R [env_var: IAI_FOLLOW_SCAN_COUNT]
+.RS
+Number of scanned accounts in the \fIInputDB\fR.
+.RE
+.PP
+.B --bot-input-followers
+.R \fIfollowers\fR
+.R [env_var: IAI_FOLLOW_FOLLOWERS]
+.RS
+Number of Followers of the scanned accounts that are processed.
+.RE
+.PP
+.B --bot-input-likers
+.R \fIlikers\fR
+.R [env_var: IAI_FOLLOW_LIKERS]
+.RS
+Number of Likers of the scanned accounts that are processed.
+.RE
+.PP
+.B --bot-input-commenters
+.R \fIcommenters\fR
+.R [env_var: IAI_FOLLOW_COMMENTERS]
+.RS
+Number of Commenters of the scanned accounts that are processed.
+.RE
+.PP
+.B --max-likes-per-user
+.R \fIlikes\fR
+.R [env_var: IAI_FOLLOW_MAX_LIKES]
+.RS
+Maximum likes an account can get.
+.RE
+.PP
+.B --like-chance
+.R \fIchance\fR
+.R [env_var: IAI_FOLLOW_LIKE_CHANCE]
+.RS
+Chance in percentage to like posts of a new account.
+.RE
+.PP
+.B --follow-chance
+.R \fIchance\fR
+.R [env_var: IAI_FOLLOW_FOLLOW_CHANCE]
+.RS
+Chance in percentage to follow a new account to following.
+.RE
+.RE
+.br
+.SH EXAMPLES
+.PP
+.R Login with client file:
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save
+.RE
+.R Try to automatically find client file:
+.RS
+.R $ python3 instabotAI.py -u myaccount
+.RE
+.R Use credentials to log in. If client file is found with given username, it is used:
+.RS
+.R $ python3 instabotAI.py -u myaccount -p p4ssw0rd 
+.RE
+.R Use credentials to log in and force log in with credentials:
+.RS
+.R $ python3 instabotAI.py -u myaccount -p p4ssw0rd --force-login
+.RE
+.PP
+.R Find same accounts with specified usernames/-hashtags file:
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save -f --usernames-search-file=owndir/usernames.txt --hashtags-search-file=owndir/hashtags.txt
+.RE
+.R Find same accounts with specified delay and autosave:
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save --delay 50 --delay-variance 10 -a -f
+.RE
+.R Find same accounts with more than 500 followers and less than 300 followings:
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300
+.RE
+.R Find same accounts with 
+.br
+.R 1. more than 300 followers and less than 50 followings or
+.br
+.R 2. more than 1000 followers and less than 400 followings:
+.br
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save --delay 50 -a -f -s 300,50 -s 1000,400
+.RE
+.R Find same accounts only with hashtags:
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300 --no-usernames-search
+.RE
+.R Find same accounts and fill database with 50%% of valid usernames and 50%% of scanned hashtags:
+.RS
+.R $ python3 instabotAI.py -c ./.myaccount.instauto.save --delay 50 -a -f -s 500,300 --usernames-search-percentage 0.5 --hashtags-search-percentage 0.5
+.RE
+
+
+
+
+.SH SEE ALSO
+.RS
+.br
+.br
+.I https://github.com/stanvanrooy/instauto\fR
+.RE
+
+
+
