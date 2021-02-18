@@ -76,7 +76,7 @@ find_accounts_group.add_argument("--hashtags-search-percentage", type=float, def
 categorize_accounts_group = parser.add_argument_group("Categorize Accounts Stage", "Options relevant for the Categorize Accounts Stage.")
 categorize_accounts_group.add_argument("-g", "--categorize", action="store_true", help="Enable this stage.")
 categorize_accounts_group.add_argument("--scan-limit", type=int, default=None, help="How many own followings to scan maximum. Defaulting to ALL.", env_var="IAI_SCAN_LIMIT")
-categorize_accounts_group.add_argument("--unfollow-blacklist-file", type=pathlib.Path, help="Optional File with accounts excluded from unfollowing.", env_var="IAI_UNFOLLOW_BLACKLIST_FILE")
+categorize_accounts_group.add_argument("--unfollow-blacklist-file", type=pathlib.Path, default="config/unfollow_blacklist.txt", help="Optional File with accounts excluded from unfollowing.", env_var="IAI_UNFOLLOW_BLACKLIST_FILE")
 categorize_accounts_group.add_argument("--reverse-following-count", type=int, default=100, help="How many followings to trace back before deciding wether account is following back or not.", env_var="IAI_REVERSE_FOLLOWING_COUNT")
 
 unfollow_accounts_group = parser.add_argument_group("Unfollow Accounts Stage", "Options relevant for the Unfollow Accounts Stage.")
