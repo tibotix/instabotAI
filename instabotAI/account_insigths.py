@@ -28,7 +28,7 @@ class AccountInsigths():
     return self.mutual_friendship
 
 class OwnAccountInsigths(AccountInsigths):
-  def is_followed_by_acc(acc, reverse_following_count):
+  def is_followed_by_acc(self, acc, reverse_following_count):
     return acc.is_following_you
 
 class AccountInsigthsFactory():
