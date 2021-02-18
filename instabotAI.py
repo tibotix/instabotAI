@@ -92,8 +92,7 @@ rehabilitate_accounts_group.add_argument("--rehabilitate-percentage", type=float
 
 follow_accounts_group = parser.add_argument_group("Follow Accounts Stage", "Options relevant for the Follow Accounts Stage.")
 follow_accounts_group.add_argument("-n", "--follow", action="store_true", help="Enable this stage.")
-#TODO: Maybe rename to "--scanc-count"
-follow_accounts_group.add_argument("--accounts-to-scan", type=int, default=1, help="Number of scanned accounts in the input_db.", env_var="IAI_FOLLOW_SCAN_COUNT")
+follow_accounts_group.add_argument("--scan-count", type=int, default=1, help="Number of scanned accounts in the input_db.", env_var="IAI_FOLLOW_SCAN_COUNT")
 follow_accounts_group.add_argument("--bot-input-followers", type=int, default=100, help="Number of Followers of the scanned accounts that are processed.", env_var="IAI_FOLLOW_FOLLOWERS")
 follow_accounts_group.add_argument("--bot-input-likers", type=int, default=200, help="Number of Likers of the scanned accounts that are processed.", env_var="IAI_FOLLOW_LIKERS")
 follow_accounts_group.add_argument("--bot-input-commenters", type=int, default=200, help="Number of Commenters of the scanned accounts that are processed.",env_var="IAI_FOLLOW_COMMENTERS")
@@ -167,7 +166,7 @@ def get_follow_accounts_stage(args, input_db):
     print(termcolor.colored("[!] Max likes per user is not specified! Falling back to {0} likes".format(str(args.max_likes)), "magenta"))
     return args.max_likes
   max_likes = get_max_likes()
-  return instabotAI.stages.LikeFollowNewAccountsStage(input_db, accounts_to_process=args.accounts_to_scan, bot_input_followers=args.bot_input_followers, bot_input_likers=args.bot_input_likers, bot_input_commenters=args.bot_input_commenters, max_likes_per_user=max_likes, like_chance=args.like_chance*100, follow_chance=args.follow_chance*100)
+  return instabotAI.stages.LikeFollowNewAccountsStage(input_db, accounts_to_process=args.scan_count, bot_input_followers=args.bot_input_followers, bot_input_likers=args.bot_input_likers, bot_input_commenters=args.bot_input_commenters, max_likes_per_user=max_likes, like_chance=args.like_chance*100, follow_chance=args.follow_chance*100)
 
 
 def main(args):
