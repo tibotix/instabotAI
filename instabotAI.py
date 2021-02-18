@@ -135,7 +135,7 @@ def get_find_same_accounts_stage(args, client, input_db):
     hashtags_files_input = file_adapter.FilesInputStream()
     hashtags_files_input.add_file(args.hashtags_search_file)
     hashtags_account_finder = instabotAI.account_finder.HashtagsAccountFinder(hashtags_files_input, client)
-    for f in args.search_filterer:
+    for f in args.search_filter:
       hashtags_account_finder.add_filterer(account_filterer.AccountFilterer(*f))
     find_same_account_stage.add_account_finder(hashtags_account_finder, AccountsDatabaseLimitCalculator(input_db).from_free_space().percentage(args.hashtags_search_percentage))
 
